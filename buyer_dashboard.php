@@ -1,3 +1,55 @@
+<?php
+session_start();
+
+// Database connection
+$host = 'localhost';
+$dbname = 'krishisheba';
+$username = 'root';
+$password = '';
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("Database Connection failed: " . $e->getMessage());
+}
+
+if (!isset($_SESSION['buyer_id'])) {
+    $_SESSION['buyer_id'] = 1;
+}
+$buyer_id = $_SESSION['buyer_id'];
+
+// Add to Cart Logic (যখন প্লাস বাটনে ক্লিক করা হবে)
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
+    $product_name = $_POST['product_name'];
+    $price = $_POST['price'];
+    $image_url = $_POST['image_url'];
+    $quantity = 1;
+
+    try {
+        $check_stmt = $pdo->prepare("SELECT * FROM cart WHERE buyer_id = ? AND product_name = ?");
+        $check_stmt->execute([$buyer_id, $product_name]);
+        
+        if($check_stmt->rowCount() > 0) {
+            $update_stmt = $pdo->prepare("UPDATE cart SET quantity = quantity + 1 WHERE buyer_id = ? AND product_name = ?");
+            $update_stmt->execute([$buyer_id, $product_name]);
+        } else {
+            $insert_stmt = $pdo->prepare("INSERT INTO cart (buyer_id, product_name, price, quantity, image_url) VALUES (?, ?, ?, ?, ?)");
+            $insert_stmt->execute([$buyer_id, $product_name, $price, $quantity, $image_url]);
+        }
+        // সফল হলে মেসেজ দেখাবে এবং পেজ রিলোড হবে যাতে কার্টের সংখ্যা বাড়ে
+        echo "<script>alert('{$product_name} সফলভাবে কার্টে যোগ করা হয়েছে!'); window.location.href='buyer_dashboard.php';</script>";
+        exit();
+    } catch(PDOException $e) {
+        echo "<script>alert('কোথাও সমস্যা হয়েছে!');</script>";
+    }
+}
+
+// কার্টের মোট আইটেম গোনা (ব্যাজের জন্য)
+$count_stmt = $pdo->prepare("SELECT SUM(quantity) FROM cart WHERE buyer_id = ?");
+$count_stmt->execute([$buyer_id]);
+$cart_count = $count_stmt->fetchColumn() ?: 0;
+?>
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -25,13 +77,14 @@
         </div>
         
         <div class="sidebar-menu">
-            <a href="#" class="menu-item active">
+            <a href="buyer_dashboard.php" class="menu-item active">
                 <i class="fa-solid fa-store"></i>
                 তাজা বাজার
             </a>
-            <a href="#" class="menu-item">
+            <!-- কার্টের লিংকে buyer_cart.php এবং ডাইনামিক ব্যাজ দেওয়া হয়েছে -->
+            <a href="buyer_cart.php" class="menu-item">
                 <i class="fa-solid fa-basket-shopping"></i>
-                আমার কার্ট <span class="badge" style="position: static; margin-left: auto;">২</span>
+                আমার কার্ট <span class="badge" style="position: static; margin-left: auto;"><?php echo $cart_count; ?></span>
             </a>
             <a href="#" class="menu-item">
                 <i class="fa-solid fa-clock-rotate-left"></i>
@@ -42,7 +95,8 @@
                 পছন্দের তালিকা
             </a>
             
-            <a href="#" class="menu-item">
+            <!-- আপডেট করা সেটিংস লিংক -->
+            <a href="buyer_settings.php" class="menu-item">
                 <i class="fa-solid fa-gear"></i>
                 সেটিংস
             </a>
@@ -66,11 +120,11 @@
             </div>
             
             <div class="topbar-right">
-                <!-- Shopping Cart Icon -->
-                <button class="icon-btn" style="margin-right: 15px; color: var(--primary-color);">
+                <!-- Shopping Cart Icon (Linked to buyer_cart.php) -->
+                <a href="buyer_cart.php" class="icon-btn" style="margin-right: 15px; color: var(--primary-color); text-decoration: none;">
                     <i class="fa-solid fa-cart-shopping"></i>
-                    <span class="badge" style="background: var(--accent-color); color: #000;">২</span>
-                </button>
+                    <span class="badge" style="background: var(--accent-color); color: #000;"><?php echo $cart_count; ?></span>
+                </a>
 
                 <!-- Profile -->
                 <div class="profile-dropdown-container" id="profileBtn" style="position: relative; cursor: pointer;">
@@ -85,7 +139,10 @@
                     <!-- Profile Dropdown -->
                     <div class="dropdown-menu" id="profileDropdown" style="width: 220px;">
                         <div class="dropdown-header">অ্যাকাউন্ট অপশন</div>
-                        <a href="#" class="dropdown-item"><i class="fa-regular fa-user"></i> প্রোফাইল</a>
+                        
+                        <!-- আপডেট করা প্রোফাইল লিংক -->
+                        <a href="buyer_settings.php" class="dropdown-item"><i class="fa-regular fa-user"></i> প্রোফাইল</a>
+                        
                         <a href="#" class="dropdown-item"><i class="fa-solid fa-location-dot"></i> ডেলিভারি ঠিকানা</a>
                         <div style="border-top: 1px solid #f0f0f0; margin-top: 5px; padding-top: 5px;"></div>
                         <a href="index.php" class="dropdown-item" style="color: #d32f2f;"><i class="fa-solid fa-right-from-bracket"></i> লগআউট</a>
@@ -125,19 +182,24 @@
                 <div class="product-card">
                     <div class="product-img-wrapper">
                         <span class="product-badge">তাজা</span>
-                        <!-- Unsplash placeholder for tomato -->
                         <img src="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=60" alt="টমেটো" class="product-img">
                     </div>
                     <div class="product-details">
                         <h3 class="product-title">দেশী লাল টমেটো</h3>
                         <div class="product-farmer">
-                            <i class="fa-solid fa-user-check"></i> কৃষক: রহিম মিয়া (গাজীপুর)
+                            <i class="fa-solid fa-user-check"></i> কৃষক: রহিম মিয়া (গাজীপুর)
                         </div>
                         <div class="product-bottom">
                             <div class="product-price">৳ ৪৫ <span>/ কেজি</span></div>
-                            <button class="add-to-cart-btn" onclick="alert('পণ্যটি কার্টে যোগ করা হয়েছে!')">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
+                            <!-- PHP Form for Add to Cart -->
+                            <form method="POST" style="display:inline; margin:0; padding:0;">
+                                <input type="hidden" name="product_name" value="দেশী লাল টমেটো">
+                                <input type="hidden" name="price" value="45">
+                                <input type="hidden" name="image_url" value="https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=500&auto=format&fit=crop&q=60">
+                                <button type="submit" name="add_to_cart" class="add-to-cart-btn" title="কার্টে যোগ করুন">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -145,7 +207,6 @@
                 <!-- Product 2 -->
                 <div class="product-card">
                     <div class="product-img-wrapper">
-                        <!-- Unsplash placeholder for Potato -->
                         <img src="https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&auto=format&fit=crop&q=60" alt="আলু" class="product-img">
                     </div>
                     <div class="product-details">
@@ -155,9 +216,14 @@
                         </div>
                         <div class="product-bottom">
                             <div class="product-price">৳ ৩০ <span>/ কেজি</span></div>
-                            <button class="add-to-cart-btn" onclick="alert('পণ্যটি কার্টে যোগ করা হয়েছে!')">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
+                            <form method="POST" style="display:inline; margin:0; padding:0;">
+                                <input type="hidden" name="product_name" value="ডায়মন্ড আলু">
+                                <input type="hidden" name="price" value="30">
+                                <input type="hidden" name="image_url" value="https://images.unsplash.com/photo-1518977676601-b53f82aba655?w=500&auto=format&fit=crop&q=60">
+                                <button type="submit" name="add_to_cart" class="add-to-cart-btn" title="কার্টে যোগ করুন">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -166,7 +232,6 @@
                 <div class="product-card">
                     <div class="product-img-wrapper">
                         <span class="product-badge" style="background: #e65100; color: white;">বেস্ট সেলার</span>
-                        <!-- Unsplash placeholder for Eggplant -->
                         <img src="https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?w=500&auto=format&fit=crop&q=60" alt="বেগুন" class="product-img">
                     </div>
                     <div class="product-details">
@@ -176,9 +241,14 @@
                         </div>
                         <div class="product-bottom">
                             <div class="product-price">৳ ৫৫০ <span>/ কেজি</span></div>
-                            <button class="add-to-cart-btn" onclick="alert('পণ্যটি কার্টে যোগ করা হয়েছে!')">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
+                            <form method="POST" style="display:inline; margin:0; padding:0;">
+                                <input type="hidden" name="product_name" value="ক্যাপসিকাম">
+                                <input type="hidden" name="price" value="550">
+                                <input type="hidden" name="image_url" value="https://images.unsplash.com/photo-1601648764658-cf37e8c89b70?w=500&auto=format&fit=crop&q=60">
+                                <button type="submit" name="add_to_cart" class="add-to-cart-btn" title="কার্টে যোগ করুন">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -186,7 +256,6 @@
                 <!-- Product 4 -->
                 <div class="product-card">
                     <div class="product-img-wrapper">
-                        <!-- Unsplash placeholder for Mango -->
                         <img src="https://img.magnific.com/premium-photo/ripe-mango-isolated-white-background_38013-3722.jpg?w=2000" alt="আম" class="product-img">
                     </div>
                     <div class="product-details">
@@ -196,9 +265,14 @@
                         </div>
                         <div class="product-bottom">
                             <div class="product-price">৳ ১২০ <span>/ কেজি</span></div>
-                            <button class="add-to-cart-btn" onclick="alert('পণ্যটি কার্টে যোগ করা হয়েছে!')">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
+                            <form method="POST" style="display:inline; margin:0; padding:0;">
+                                <input type="hidden" name="product_name" value="রাজশাহী ফজলি আম">
+                                <input type="hidden" name="price" value="120">
+                                <input type="hidden" name="image_url" value="https://img.magnific.com/premium-photo/ripe-mango-isolated-white-background_38013-3722.jpg?w=2000">
+                                <button type="submit" name="add_to_cart" class="add-to-cart-btn" title="কার্টে যোগ করুন">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
