@@ -41,7 +41,7 @@
         </div>
     </header>
 
-    <!-- Features Section -->
+    
     <section id="features" class="features">
         <div class="section-header">
             <h2 class="section-title">কেন কৃষিসেবা বেছে নেবেন?</h2>
