@@ -80,7 +80,7 @@ $cart_count = $count_stmt->fetchColumn() ?: 0;
                 <i class="fa-solid fa-store"></i>
                 তাজা বাজার
             </a>
-            <!-- কার্টের লিংকে buyer_cart.php এবং ডাইনামিক ব্যাজ দেওয়া হয়েছে -->
+            <!-- কার্টের লিংকে  buyer_cart.php এবং ডাইনামিক ব্যাজ দেওয়া হয়েছে -->
             <a href="buyer_cart.php" class="menu-item">
                 <i class="fa-solid fa-basket-shopping"></i>
                 আমার কার্ট <span class="badge" style="position: static; margin-left: auto;"><?php echo $cart_count; ?></span>
@@ -94,7 +94,7 @@ $cart_count = $count_stmt->fetchColumn() ?: 0;
                 পছন্দের তালিকা
             </a>
             
-            <!-- আপডেট করা সেটিংস লিংক -->
+            <!-- আপডেট করা সেটিংস লিংক  -->
             <a href="buyer_settings.php" class="menu-item">
                 <i class="fa-solid fa-gear"></i>
                 সেটিংস
@@ -109,7 +109,7 @@ $cart_count = $count_stmt->fetchColumn() ?: 0;
         </div>
     </aside>
 
-    <!-- Main Content -->
+    <!-- Main Content   -->
     <main class="main-content">
         <!-- Topbar -->
         <header class="topbar">
@@ -119,7 +119,7 @@ $cart_count = $count_stmt->fetchColumn() ?: 0;
             </div>
             
             <div class="topbar-right">
-                <!-- Shopping Cart Icon (Linked to buyer_cart.php) -->
+                <!--   Shopping Cart Icon (Linked to buyer_cart.php) -->
                 <a href="buyer_cart.php" class="icon-btn" style="margin-right: 15px; color: var(--primary-color); text-decoration: none;">
                     <i class="fa-solid fa-cart-shopping"></i>
                     <span class="badge" style="background: var(--accent-color); color: #000;"><?php echo $cart_count; ?></span>
