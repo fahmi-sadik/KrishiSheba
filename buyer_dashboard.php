@@ -1,7 +1,6 @@
 <?php
 session_start();
 
-// Database connection
 $host = 'localhost';
 $dbname = 'krishisheba';
 $username = 'root';
@@ -19,7 +18,7 @@ if (!isset($_SESSION['buyer_id'])) {
 }
 $buyer_id = $_SESSION['buyer_id'];
 
-// Add to Cart Logic (যখন প্লাস বাটনে ক্লিক করা হবে)
+// Add to Cart Logical work (যখন প্লাস বাটনে ক্লিক করা হবে)
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_to_cart'])) {
     $product_name = $_POST['product_name'];
     $price = $_POST['price'];
@@ -56,7 +55,7 @@ $cart_count = $count_stmt->fetchColumn() ?: 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ক্রেতা ড্যাশবোর্ড - কৃষিসেবা | KrishiSheba</title>
-    <!-- Google Fonts -->
+    <!-- GoogleFonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
