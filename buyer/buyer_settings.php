@@ -30,34 +30,64 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES['profile_image'])) {
         mkdir($target_dir, 0777, true);
     }
 
-    $file_name = $_FILES['profile_image']['name'];
-    $file_tmp = $_FILES['profile_image']['tmp_name'];
+    $file = $_FILES['profile_image'];
+    $file_name = $file['name'];
+    $file_tmp = $file['tmp_name'];
+    $file_size = $file['size'];
+    $file_error = $file['error'];
     $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-    $extensions = array("jpeg", "jpg", "png");
+    $allowed = array("jpeg", "jpg", "png");
+    $maxSize = 2 * 1024 * 1024; // 2 MB
 
-    if (in_array($file_ext, $extensions)) {
+    if ($file_error !== UPLOAD_ERR_OK) {
+        $message = "<div class='error-msg' style='color: #c62828;'>ফাইল আপলোডে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।</div>";
+    } elseif (!in_array($file_ext, $allowed)) {
+        $message = "<div class='error-msg' style='color: #c62828;'>শুধুমাত্র JPG/PNG ফাইল অনুমোদিত।</div>";
+    } elseif ($file_size > $maxSize) {
+        $message = "<div class='error-msg' style='color: #c62828;'>ফাইলটি খুব বড় (অধিকতম 2MB)।</div>";
+    } else {
         $new_filename = "user_" . $buyer_id . "_" . time() . "." . $file_ext;
         if (move_uploaded_file($file_tmp, $target_dir . $new_filename)) {
             $stmt = $pdo->prepare("UPDATE users SET image = ? WHERE id = ?");
             $stmt->execute([$new_filename, $buyer_id]);
             $message = "<div class='success-msg' style='color: #2e7d32; background: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-weight:bold;'><i class='fa-solid fa-check-circle'></i> প্রোফাইল ছবি আপডেট হয়েছে!</div>";
+        } else {
+            $message = "<div class='error-msg' style='color: #c62828;'>ফাইল সংরক্ষণে ব্যর্থ হয়েছে।</div>";
         }
     }
 }
 
 // ২. প্রোফাইল তথ্য আপডেট লজিক
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
-    $name = $_POST['name'];
-    $phone = $_POST['phone'];
-    $address = $_POST['address'];
+    $name = trim($_POST['name'] ?? '');
+    $phone = trim($_POST['phone'] ?? '');
+    $address = trim($_POST['address'] ?? '');
 
-    try {
-        $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, address = ? WHERE id = ?");
-        if($stmt->execute([$name, $phone, $address, $buyer_id])) {
-            $message = "<div class='success-msg' style='color: #2e7d32; background: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-weight:bold;'><i class='fa-solid fa-check-circle'></i> প্রোফাইল সফলভাবে আপডেট হয়েছে!</div>";
+    // Basic validation
+    $errors = [];
+    if ($name === '') {
+        $errors[] = 'নাম আবশ্যক।';
+    }
+    if ($phone !== '') {
+        if (!preg_match('/^[0-9\\+\\-\\s]{7,20}$/', $phone)) {
+            $errors[] = 'সঠিক ফোন নম্বর দিন (সংখ্যা/ + / - অনুমোদিত)।';
         }
-    } catch(PDOException $e) {
-        $message = "<div class='error-msg' style='color: red;'>আপডেট ব্যর্থ হয়েছে।</div>";
+    }
+    if ($address === '') {
+        $errors[] = 'ঠিকানা আবশ্যক।';
+    }
+
+    if (!empty($errors)) {
+        $message = "<div class='error-msg' style='color:#c62828; background:#ffebee; padding:10px; border-radius:5px; margin-bottom:15px; font-weight:bold;'>" . implode('<br>', array_map('htmlspecialchars', $errors)) . "</div>";
+    } else {
+        try {
+            $stmt = $pdo->prepare("UPDATE users SET name = ?, phone = ?, address = ? WHERE id = ?");
+            if ($stmt->execute([$name, $phone, $address, $buyer_id])) {
+                $message = "<div class='success-msg' style='color: #2e7d32; background: #e8f5e9; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-weight:bold;'><i class='fa-solid fa-check-circle'></i> প্রোফাইল সফলভাবে আপডেট হয়েছে!</div>";
+            }
+        } catch (PDOException $e) {
+            $message = "<div class='error-msg' style='color: #c62828;'>আপডেট ব্যর্থ হয়েছে: " . htmlspecialchars($e->getMessage()) . "</div>";
+        }
     }
 }
 
