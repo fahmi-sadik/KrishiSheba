@@ -1,4 +1,12 @@
 <?php
+/**
+ * Login Authentication Handler
+ * 
+ * This file handles user authentication for the KrishiSheba application.
+ * It supports multiple user roles: admin, buyer, and farmer.
+ * Users are authenticated via email and password with role-based verification.
+ */
+
 session_start();
 
 $host = 'localhost';
