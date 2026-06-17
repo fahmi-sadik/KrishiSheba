@@ -204,44 +204,44 @@
                 <!-- Right Column: Settings Form -->
                 <div class="settings-form-card">
                     <h3>সাধারণ তথ্য পরিবর্তন</h3>
-                    <form action="#" method="POST" onsubmit="event.preventDefault(); alert('প্রোফাইল আপডেট করা হয়েছে!');">
+                    <form id="adminInfoForm" action="#" method="POST">
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">পুরো নাম</label>
-                                <input type="text" class="form-control" value="সিস্টেম অ্যাডমিন" required>
+                                <label class="form-label" for="adminFullName">পুরো নাম</label>
+                                <input id="adminFullName" name="adminFullName" type="text" class="form-control" value="সিস্টেম অ্যাডমিন" required>
                             </div>
                             <div class="form-group">
-                                <label class="form-label">ইমেইল ঠিকানা</label>
-                                <input type="email" class="form-control" value="admin@krishisheba.com" required>
+                                <label class="form-label" for="adminEmail">ইমেইল ঠিকানা</label>
+                                <input id="adminEmail" name="adminEmail" type="email" class="form-control" value="admin@krishisheba.com" required>
                             </div>
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">ফোন নম্বর</label>
-                                <input type="tel" class="form-control" value="+8801234567890">
+                                <label class="form-label" for="adminPhone">ফোন নম্বর</label>
+                                <input id="adminPhone" name="adminPhone" type="tel" class="form-control" value="+8801234567890">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">ঠিকানা</label>
-                                <input type="text" class="form-control" value="ঢাকা, বাংলাদেশ">
+                                <label class="form-label" for="adminAddress">ঠিকানা</label>
+                                <input id="adminAddress" name="adminAddress" type="text" class="form-control" value="ঢাকা, বাংলাদেশ">
                             </div>
                         </div>
                         <button type="submit" class="btn btn-primary">তথ্য সেভ করুন</button>
                     </form>
 
                     <h3 style="margin-top: 40px;">পাসওয়ার্ড পরিবর্তন</h3>
-                    <form action="#" method="POST" onsubmit="event.preventDefault(); alert('পাসওয়ার্ড পরিবর্তন করা হয়েছে!');">
+                    <form id="passwordForm" action="#" method="POST">
                         <div class="form-group">
-                            <label class="form-label">বর্তমান পাসওয়ার্ড</label>
-                            <input type="password" class="form-control" placeholder="বর্তমান পাসওয়ার্ড লিখুন">
+                            <label class="form-label" for="currentPassword">বর্তমান পাসওয়ার্ড</label>
+                            <input id="currentPassword" name="currentPassword" type="password" class="form-control" placeholder="বর্তমান পাসওয়ার্ড লিখুন">
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label class="form-label">নতুন পাসওয়ার্ড</label>
-                                <input type="password" class="form-control" placeholder="নতুন পাসওয়ার্ড লিখুন">
+                                <label class="form-label" for="newPassword">নতুন পাসওয়ার্ড</label>
+                                <input id="newPassword" name="newPassword" type="password" class="form-control" placeholder="নতুন পাসওয়ার্ড লিখুন">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">পাসওয়ার্ড নিশ্চিত করুন</label>
-                                <input type="password" class="form-control" placeholder="আবার নতুন পাসওয়ার্ড লিখুন">
+                                <label class="form-label" for="confirmPassword">পাসওয়ার্ড নিশ্চিত করুন</label>
+                                <input id="confirmPassword" name="confirmPassword" type="password" class="form-control" placeholder="আবার নতুন পাসওয়ার্ড লিখুন">
                             </div>
                         </div>
                         <button type="submit" class="btn btn-accent">পাসওয়ার্ড পরিবর্তন করুন</button>
@@ -283,16 +283,74 @@
             const profileUpload = document.getElementById('profileUpload');
             const profilePicture = document.querySelector('.profile-picture');
             const topbarAvatar = document.querySelector('.profile-dropdown img');
-            
+
+            const adminInfoForm = document.getElementById('adminInfoForm');
+            const passwordForm = document.getElementById('passwordForm');
+            const infoFields = {
+                fullName: document.getElementById('adminFullName'),
+                email: document.getElementById('adminEmail'),
+                phone: document.getElementById('adminPhone'),
+                address: document.getElementById('adminAddress')
+            };
+
+            function loadAdminInfo() {
+                const savedInfo = localStorage.getItem('krishisheba_admin_info');
+                if (!savedInfo) return;
+                try {
+                    const info = JSON.parse(savedInfo);
+                    if (info.fullName) infoFields.fullName.value = info.fullName;
+                    if (info.email) infoFields.email.value = info.email;
+                    if (info.phone) infoFields.phone.value = info.phone;
+                    if (info.address) infoFields.address.value = info.address;
+                } catch (err) {
+                    console.warn('Failed to parse admin info from localStorage');
+                }
+            }
+
+            function saveAdminInfo() {
+                const info = {
+                    fullName: infoFields.fullName.value.trim(),
+                    email: infoFields.email.value.trim(),
+                    phone: infoFields.phone.value.trim(),
+                    address: infoFields.address.value.trim()
+                };
+                localStorage.setItem('krishisheba_admin_info', JSON.stringify(info));
+            }
+
             // Load saved image from localStorage on page load
             const savedImage = localStorage.getItem('krishisheba_admin_avatar');
             if (savedImage) {
                 profilePicture.src = savedImage;
                 if (topbarAvatar) topbarAvatar.src = savedImage;
             }
-            
+            loadAdminInfo();
+
+            adminInfoForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveAdminInfo();
+                alert('প্রোফাইল তথ্য সফলভাবে সেভ করা হয়েছে!');
+            });
+
+            passwordForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const newPassword = document.getElementById('newPassword').value.trim();
+                const confirmPassword = document.getElementById('confirmPassword').value.trim();
+                if (newPassword === '' || confirmPassword === '') {
+                    alert('অনুগ্রহ করে সব পাসওয়ার্ড ফিল্ড পুরণ করুন।');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    alert('নতুন পাসওয়ার্ড এবং নিশ্চিত পাসওয়ার্ড মিলছে না।');
+                    return;
+                }
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                alert('পাসওয়ার্ড পরিবর্তন অনুরোধ পাঠানো হয়েছে।');
+            });
+
             profileUpload.addEventListener('change', function(e) {
-                if(e.target.files && e.target.files[0]) {
+                if (e.target.files && e.target.files[0]) {
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         const imgData = e.target.result;
@@ -305,8 +363,9 @@
                             alert('প্রোফাইল ছবি সফলভাবে আপডেট করা হয়েছে!');
                         } catch (err) {
                             console.warn('Image too large for localStorage');
+                            alert('ছবি সংরক্ষণ করা যায়নি, দয়া করে ছোট ফাইল নির্বাচন করুন।');
                         }
-                    }
+                    };
                     reader.readAsDataURL(e.target.files[0]);
                 }
             });
